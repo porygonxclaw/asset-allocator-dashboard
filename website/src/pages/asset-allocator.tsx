@@ -77,7 +77,6 @@ export default function AssetAllocatorPage() {
           <section style={selectedShell}>
             <div style={selectedHeader}>
               <div>
-                <div style={eyebrow}>Selected lane</div>
                 <h2 style={{margin: '0.15rem 0 0'}}>Selected category: {selected.category.title}</h2>
                 <div style={{marginTop: '0.35rem', color: 'rgba(238,242,255,0.76)', lineHeight: 1.55}}>{selected.category.subtitle}</div>
               </div>
@@ -87,7 +86,7 @@ export default function AssetAllocatorPage() {
               </div>
             </div>
 
-            <div style={selectedGrid}>
+            <div style={{...selectedGrid, gridTemplateColumns: '1fr'}}>
               <div style={selectedCard}>
                 <div style={subheading}>Indicator stack</div>
                 <div style={{color: 'rgba(238,242,255,0.76)', lineHeight: 1.65, marginBottom: '0.9rem'}}>
@@ -98,15 +97,6 @@ export default function AssetAllocatorPage() {
                     <IndicatorRow key={row.key} label={row.label} value={formatIndicatorValue(row)} score={row.score} weight={row.weight} note={row.note} />
                   ))}
                 </div>
-              </div>
-
-              <div style={selectedCard}>
-                <div style={subheading}>What is in scope right now</div>
-                <ul style={{margin: '0.6rem 0 0', paddingLeft: '1.2rem', color: 'rgba(238,242,255,0.72)', lineHeight: 1.7}}>
-                  {selected.category.watchItems.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
 
                 <div style={{marginTop: '1.2rem'}}>
                   <div style={subheading}>Model setup</div>
