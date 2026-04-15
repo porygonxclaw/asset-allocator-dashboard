@@ -63,7 +63,8 @@ const config: Config = {
     image: 'img/hermes-agent-banner.png',
     colorMode: {
       defaultMode: 'dark',
-      respectPrefersColorScheme: true,
+      respectPrefersColorScheme: false,
+      disableSwitch: true,
     },
     docs: {
       sidebar: {
