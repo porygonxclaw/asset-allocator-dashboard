@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import Layout from '@theme/Layout';
 import {
   ASSET_CATEGORIES,
@@ -15,12 +15,17 @@ export default function AssetAllocatorPage() {
   const [selectedId, setSelectedId] = useState<AssetCategoryId>('crypto');
   const selected = scoredCategories.find((entry) => entry.category.id === selectedId) ?? scoredCategories[0];
 
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.documentElement.setAttribute('data-theme-choice', 'dark');
+  }, []);
+
   return (
     <Layout
       title="Asset Allocator"
       description="A broad buy-rating dashboard for crypto, stocks, Pokemon, and Yu-Gi-Oh using long-term valuation and trend signals."
     >
-      <main style={{padding: '2rem 0 4rem'}}>
+      <main style={{padding: '2rem 0 4rem', background: 'linear-gradient(180deg, #0b1020 0%, #0a0f1b 100%)', color: '#eef2ff', minHeight: '100vh'}}>
         <div style={pageFrame}>
           <section style={{textAlign: 'center', marginBottom: '1.4rem'}}>
             <h1 style={{margin: 0, fontSize: '2.4rem', lineHeight: 1.1}}>Asset Allocator</h1>
@@ -34,20 +39,25 @@ export default function AssetAllocatorPage() {
                   key={category.id}
                   type="button"
                   onClick={() => setSelectedId(category.id)}
+                  aria-pressed={active}
+                  title={`Open ${category.title}`}
                   style={{...laneCard, ...(active ? laneCardActive : {})}}
                 >
                   <div style={laneCardTop}>
                     <div style={laneBadge}>{category.symbol}</div>
                     <div style={{textAlign: 'right'}}>
                       <div style={{fontSize: '2.3rem', fontWeight: 800, color: scoreColor(result.score), lineHeight: 1}}>{result.score}</div>
-                      <div style={{fontSize: '0.8rem', color: 'var(--ifm-font-color-secondary)'}}>out of 100</div>
+                      <div style={{fontSize: '0.8rem', color: 'rgba(238,242,255,0.72)'}}>out of 100</div>
                     </div>
                   </div>
 
                   <div style={{textAlign: 'left', marginTop: '0.9rem'}}>
                     <h2 style={{margin: '0.15rem 0 0.2rem', fontSize: '1.25rem'}}>{category.title}</h2>
-                    <div style={{fontSize: '0.82rem', color: 'var(--ifm-font-color-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em'}}>
+                    <div style={{fontSize: '0.82rem', color: 'rgba(238,242,255,0.72)', textTransform: 'uppercase', letterSpacing: '0.08em'}}>
                       {category.source}
+                    </div>
+                    <div style={{marginTop: '0.35rem', fontSize: '0.88rem', color: 'rgba(238,242,255,0.76)', lineHeight: 1.45}}>
+                      {category.subtitle}
                     </div>
                   </div>
 
@@ -69,6 +79,7 @@ export default function AssetAllocatorPage() {
               <div>
                 <div style={eyebrow}>Selected lane</div>
                 <h2 style={{margin: '0.15rem 0 0'}}>Selected category: {selected.category.title}</h2>
+                <div style={{marginTop: '0.35rem', color: 'rgba(238,242,255,0.76)', lineHeight: 1.55}}>{selected.category.subtitle}</div>
               </div>
               <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center'}}>
                 <Pill tone={getBandTone(selected.result.score)}>{selected.result.label}</Pill>
@@ -78,8 +89,10 @@ export default function AssetAllocatorPage() {
 
             <div style={selectedGrid}>
               <div style={selectedCard}>
-                <div style={subheading}>Why it looks this way</div>
-                <p style={{marginTop: 0, color: 'var(--ifm-font-color-secondary)', lineHeight: 1.65}}>{selected.category.thesis}</p>
+                <div style={subheading}>Indicator stack</div>
+                <div style={{color: 'rgba(238,242,255,0.76)', lineHeight: 1.65, marginBottom: '0.9rem'}}>
+                  Weighted blend of long-term trend, RSI, drawdown, and participation signals.
+                </div>
                 <div style={{display: 'grid', gap: '0.6rem', marginTop: '1rem'}}>
                   {selected.result.details.map((row) => (
                     <IndicatorRow key={row.key} label={row.label} value={formatIndicatorValue(row)} score={row.score} weight={row.weight} note={row.note} />
@@ -89,7 +102,7 @@ export default function AssetAllocatorPage() {
 
               <div style={selectedCard}>
                 <div style={subheading}>What is in scope right now</div>
-                <ul style={{margin: '0.6rem 0 0', paddingLeft: '1.2rem', color: 'var(--ifm-font-color-secondary)', lineHeight: 1.7}}>
+                <ul style={{margin: '0.6rem 0 0', paddingLeft: '1.2rem', color: 'rgba(238,242,255,0.72)', lineHeight: 1.7}}>
                   {selected.category.watchItems.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
@@ -119,7 +132,7 @@ function Pill({tone, children}: {tone: 'green' | 'blue' | 'amber' | 'red' | 'sla
     blue: {background: 'rgba(125, 211, 252, 0.10)', color: '#bdefff', borderColor: 'rgba(125, 211, 252, 0.18)'},
     amber: {background: 'rgba(255, 209, 102, 0.10)', color: '#ffe08a', borderColor: 'rgba(255, 209, 102, 0.18)'},
     red: {background: 'rgba(255, 123, 123, 0.10)', color: '#ffb7b7', borderColor: 'rgba(255, 123, 123, 0.18)'},
-    slate: {background: 'rgba(255, 255, 255, 0.05)', color: 'var(--ifm-font-color-base)', borderColor: 'rgba(255,255,255,0.08)'},
+    slate: {background: 'rgba(255, 255, 255, 0.05)', color: '#eef2ff', borderColor: 'rgba(255,255,255,0.08)'},
   };
 
   return <span style={{...pillBase, ...stylesByTone[tone]}}>{children}</span>;
@@ -128,7 +141,7 @@ function Pill({tone, children}: {tone: 'green' | 'blue' | 'amber' | 'red' | 'sla
 function MiniFact({label, value}: {label: string; value: string}) {
   return (
     <div style={{display: 'flex', justifyContent: 'space-between', gap: '0.75rem', paddingBottom: '0.45rem', borderBottom: '1px solid rgba(255,255,255,0.07)'}}>
-      <span style={{color: 'var(--ifm-font-color-secondary)'}}>{label}</span>
+      <span style={{color: 'rgba(238,242,255,0.72)'}}>{label}</span>
       <strong style={{textAlign: 'right'}}>{value}</strong>
     </div>
   );
@@ -140,11 +153,11 @@ function IndicatorRow({label, value, score, weight, note}: {label: string; value
       <div style={{display: 'flex', justifyContent: 'space-between', gap: '0.75rem', alignItems: 'center'}}>
         <div>
           <div style={{fontWeight: 700}}>{label}</div>
-          <div style={{color: 'var(--ifm-font-color-secondary)', fontSize: '0.88rem'}}>{note}</div>
+          <div style={{color: 'rgba(238,242,255,0.72)', fontSize: '0.88rem'}}>{note}</div>
         </div>
         <div style={{textAlign: 'right'}}>
           <div style={{fontWeight: 800, color: scoreColor(score)}}>{value}</div>
-          <div style={{color: 'var(--ifm-font-color-secondary)', fontSize: '0.8rem'}}>{weight}% weight</div>
+          <div style={{color: 'rgba(238,242,255,0.72)', fontSize: '0.8rem'}}>{weight}% weight</div>
         </div>
       </div>
       <div style={{marginTop: '0.55rem'}}>
@@ -176,7 +189,7 @@ const eyebrow: React.CSSProperties = {
   fontSize: '0.8rem',
   textTransform: 'uppercase',
   letterSpacing: '0.08em',
-  color: 'var(--ifm-font-color-secondary)',
+  color: 'rgba(238,242,255,0.72)',
   fontWeight: 800,
 };
 
