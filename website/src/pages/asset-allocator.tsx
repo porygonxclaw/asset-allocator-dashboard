@@ -21,7 +21,7 @@ export default function AssetAllocatorPage() {
       description="A broad buy-rating dashboard for crypto, stocks, Pokemon, and Yu-Gi-Oh using long-term valuation and trend signals."
     >
       <main style={{padding: '2rem 0 4rem'}}>
-        <div className="container" style={{maxWidth: 1120}}>
+        <div style={pageFrame}>
           <section style={{textAlign: 'center', marginBottom: '1.4rem'}}>
             <h1 style={{margin: 0, fontSize: '2.4rem', lineHeight: 1.1}}>Asset Allocator</h1>
           </section>
@@ -45,11 +45,10 @@ export default function AssetAllocatorPage() {
                   </div>
 
                   <div style={{textAlign: 'left', marginTop: '0.9rem'}}>
+                    <h2 style={{margin: '0.15rem 0 0.2rem', fontSize: '1.25rem'}}>{category.title}</h2>
                     <div style={{fontSize: '0.82rem', color: 'var(--ifm-font-color-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em'}}>
                       {category.source}
                     </div>
-                    <h2 style={{margin: '0.15rem 0 0.25rem', fontSize: '1.25rem'}}>{category.title}</h2>
-                    <div style={{color: 'var(--ifm-font-color-secondary)', lineHeight: 1.5}}>{category.subtitle}</div>
                   </div>
 
                   <div style={{marginTop: '1rem'}}>
@@ -164,17 +163,13 @@ function ScoreBar({score, compact = false}: {score: number; compact?: boolean}) 
 }
 
 function scoreGradient(score: number) {
-  if (score >= 85) return 'linear-gradient(90deg, #38d39f, #96f2c9)';
-  if (score >= 70) return 'linear-gradient(90deg, #ffd166, #ffe59a)';
-  if (score >= 55) return 'linear-gradient(90deg, #7dd3fc, #bdefff)';
-  return 'linear-gradient(90deg, #ff7b7b, #ffb7b7)';
+  const hue = Math.max(0, Math.min(120, Math.round(score * 1.2)));
+  return `linear-gradient(90deg, hsl(${hue} 85% 55%), hsl(${Math.min(120, hue + 14)} 90% 68%))`;
 }
 
 function scoreColor(score: number) {
-  if (score >= 85) return '#8ef0c6';
-  if (score >= 70) return '#ffe08a';
-  if (score >= 55) return '#bdefff';
-  return '#ffb7b7';
+  const hue = Math.max(0, Math.min(120, Math.round(score * 1.2)));
+  return `hsl(${hue} 90% 66%)`;
 }
 
 const eyebrow: React.CSSProperties = {
@@ -206,6 +201,11 @@ const laneGrid: React.CSSProperties = {
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
   gap: '1rem',
+};
+
+const pageFrame: React.CSSProperties = {
+  width: 'min(1120px, calc(100% - 2rem))',
+  margin: '0 auto',
 };
 
 const laneCard: React.CSSProperties = {
