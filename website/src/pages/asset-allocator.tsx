@@ -1,5 +1,7 @@
 import React, {useMemo, useState} from 'react';
 import Layout from '@theme/Layout';
+import styles from './asset-allocator.module.css';
+import pokemonIndexData from '../data/cardladder-pokemon-index.json';
 import {
   ASSET_CATEGORIES,
   formatIndicatorValue,
@@ -15,13 +17,17 @@ export default function AssetAllocatorPage() {
   const [selectedId, setSelectedId] = useState<AssetCategoryId>('crypto');
 
   const selected = scoredCategories.find((entry) => entry.category.id === selectedId) ?? scoredCategories[0];
-
-  const summary = useMemo(() => {
-    const average = Math.round(scoredCategories.reduce((sum, entry) => sum + entry.result.score, 0) / scoredCategories.length);
-    const hottest = scoredCategories.reduce((best, entry) => (entry.result.score > best.result.score ? entry : best), scoredCategories[0]);
-    const coldest = scoredCategories.reduce((worst, entry) => (entry.result.score < worst.result.score ? entry : worst), scoredCategories[0]);
-    return {average, hottest, coldest};
-  }, [scoredCategories]);
+  const pokemonSeriesSlice = useMemo(() => {
+    const fullSeries = Array.isArray(pokemonIndexData?.fullSeries) ? pokemonIndexData.fullSeries : [];
+    return sliceLastYears(fullSeries, 10);
+  }, []);
+  const pokemonTenYearChange = useMemo(() => {
+    if (pokemonSeriesSlice.length < 2) return 0;
+    const start = pokemonSeriesSlice[0].value;
+    const end = pokemonSeriesSlice[pokemonSeriesSlice.length - 1].value;
+    if (!start) return 0;
+    return ((end - start) / start) * 100;
+  }, [pokemonSeriesSlice]);
 
   return (
     <Layout
@@ -29,74 +35,55 @@ export default function AssetAllocatorPage() {
       description="A broad buy-rating dashboard for crypto, stocks, Pokemon, and Yu-Gi-Oh using long-term valuation and trend signals."
     >
       <main style={{padding: '2rem 0 4rem'}}>
-        <div className="container">
-          <section style={{marginBottom: '1.5rem'}}>
-            <div style={{display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', alignItems: 'end'}}>
-              <div style={{maxWidth: 880}}>
-                <div style={eyebrow}>Asset Allocator</div>
-                <h1 style={{margin: '0.25rem 0 0.5rem'}}>4-category buy rating dashboard</h1>
-                <p style={{margin: 0, color: 'var(--ifm-font-color-secondary)', lineHeight: 1.6}}>
-                  The score runs from 0 to 100. 100 means super undervalued and buy hard. 0 means do not touch.
-                  Right now the dashboard tracks crypto, stocks, Pokemon, and Yu-Gi-Oh at a broad index level.
-                </p>
-              </div>
-
-              <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap'}}>
-                <Badge tone="green">works on phone + tablet + desktop</Badge>
-                <Badge tone="blue">seed snapshot</Badge>
-                <Badge tone="amber">click a category for detail</Badge>
-              </div>
-            </div>
+        <div className={styles.pageFrame}>
+          <section style={{textAlign: 'center', marginBottom: '1.4rem'}}>
+            <h1 style={{margin: 0, fontSize: '2.4rem', lineHeight: 1.1}}>Asset Allocator</h1>
           </section>
 
-          <section style={summaryGrid}>
-            <SummaryTile label="Average buy rating" value={`${summary.average}/100`} note={scoreBandDescription(summary.average)} />
-            <SummaryTile label="Best value lane" value={summary.hottest.category.title} note={`${summary.hottest.result.score}/100 • ${getBandLabel(summary.hottest.result.score)}`} />
-            <SummaryTile label="Most stretched" value={summary.coldest.category.title} note={`${summary.coldest.result.score}/100 • ${getBandLabel(summary.coldest.result.score)}`} />
-            <SummaryTile label="Current tilt" value={summary.average >= 70 ? 'add risk' : summary.average >= 55 ? 'wait for better tape' : 'defensive'} note="broad allocation signal" />
-          </section>
-
-          <section style={{display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fit, minmax(270px, 1fr))', marginTop: '1.5rem'}}>
+          <section className={styles.laneGrid}>
             {scoredCategories.map(({category, result}) => {
               const active = category.id === selectedId;
               return (
-                <button key={category.id} type="button" onClick={() => setSelectedId(category.id)} style={{...categoryButton, ...(active ? categoryButtonActive : {})}}>
-                  <div style={{display: 'flex', justifyContent: 'space-between', gap: '0.75rem', alignItems: 'start'}}>
-                    <div style={{display: 'flex', gap: '0.8rem', alignItems: 'center', textAlign: 'left'}}>
-                      <div style={categoryIcon}>{category.symbol}</div>
-                      <div>
-                        <div style={{fontSize: '0.82rem', color: 'var(--ifm-font-color-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em'}}>{category.source}</div>
-                        <h2 style={{margin: '0.1rem 0 0.2rem', fontSize: '1.15rem'}}>{category.title}</h2>
-                        <div style={{color: 'var(--ifm-font-color-secondary)', fontSize: '0.92rem', lineHeight: 1.45}}>{category.subtitle}</div>
-                      </div>
-                    </div>
+                <button
+                  key={category.id}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setSelectedId(category.id)}
+                  style={{...laneCard, ...(active ? laneCardActive : {})}}
+                >
+                  <div style={laneCardTop}>
+                    <div style={laneBadge}>{category.symbol}</div>
                     <div style={{textAlign: 'right'}}>
-                      <div style={{fontSize: '2rem', fontWeight: 800, color: scoreColor(result.score)}}>{result.score}</div>
+                      <div style={{fontSize: '2.3rem', fontWeight: 800, color: scoreColor(result.score), lineHeight: 1}}>{result.score}</div>
                       <div style={{fontSize: '0.8rem', color: 'var(--ifm-font-color-secondary)'}}>out of 100</div>
                     </div>
                   </div>
 
-                  <div style={{display: 'flex', justifyContent: 'space-between', gap: '0.75rem', alignItems: 'center', marginTop: '0.9rem', flexWrap: 'wrap'}}>
-                    <Pill tone={getBandTone(result.score)}>{getBandLabel(result.score)}</Pill>
-                    <Pill tone="slate">confidence: {category.confidence}</Pill>
-                    <Pill tone="slate">{category.updatedAt}</Pill>
+                  <div style={{textAlign: 'left', marginTop: '0.9rem'}}>
+                    <h2 style={{margin: '0.15rem 0 0.2rem', fontSize: '1.25rem'}}>{category.title}</h2>
+                    <div style={{fontSize: '0.82rem', color: 'var(--ifm-font-color-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em'}}>
+                      {category.source}
+                    </div>
                   </div>
 
-                  <div style={{marginTop: '0.9rem'}}>
+                  <div style={{marginTop: '1rem'}}>
                     <ScoreBar score={result.score} />
                   </div>
 
-                  <div style={{marginTop: '0.85rem', color: 'var(--ifm-font-color-secondary)', textAlign: 'left', lineHeight: 1.55}}>{category.thesis}</div>
+                  <div style={{marginTop: '0.85rem', display: 'flex', justifyContent: 'space-between', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap'}}>
+                    <Pill tone={getBandTone(result.score)}>{getBandLabel(result.score)}</Pill>
+                    <Pill tone="slate">{category.updatedAt}</Pill>
+                  </div>
                 </button>
               );
             })}
           </section>
 
-          <section style={detailShell}>
-            <div style={detailHeaderRow}>
+          <section className={styles.selectedShell}>
+            <div className={styles.selectedHeader}>
               <div>
-                <div style={eyebrow}>Detail view</div>
-                <h2 style={{margin: '0.2rem 0 0'}}>Selected category: {selected.category.title}</h2>
+                <div style={eyebrow}>Selected lane</div>
+                <h2 style={{margin: '0.15rem 0 0'}}>Selected category: {selected.category.title}</h2>
               </div>
               <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center'}}>
                 <Pill tone={getBandTone(selected.result.score)}>{selected.result.label}</Pill>
@@ -104,24 +91,39 @@ export default function AssetAllocatorPage() {
               </div>
             </div>
 
-            <div style={detailGrid}>
-              <div style={detailCard}>
-                <div style={subheading}>Why it looks this way</div>
-                <p style={{marginTop: 0, color: 'var(--ifm-font-color-secondary)', lineHeight: 1.65}}>{selected.category.thesis}</p>
-                <div style={{display: 'grid', gap: '0.6rem', marginTop: '1rem'}}>
-                  {selected.result.details.map((row) => (
-                    <IndicatorRow key={row.key} label={row.label} value={formatIndicatorValue(row)} score={row.score} weight={row.weight} note={row.note} />
-                  ))}
-                </div>
-              </div>
-
-              <div style={detailCard}>
+            <div className={styles.selectedGrid}>
+              <div style={selectedCard}>
                 <div style={subheading}>What is in scope right now</div>
                 <ul style={{margin: '0.6rem 0 0', paddingLeft: '1.2rem', color: 'var(--ifm-font-color-secondary)', lineHeight: 1.7}}>
                   {selected.category.watchItems.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
                 </ul>
+
+                <div style={{marginTop: '1.2rem'}}>
+                  <div style={subheading}>Indicator inputs</div>
+                  <div style={{display: 'grid', gap: '0.55rem', marginTop: '0.6rem'}}>
+                    {selected.result.details.map((row) => (
+                      <MiniFact
+                        key={row.key}
+                        label={row.label}
+                        value={`${formatIndicatorValue(row)} • ${row.score.toFixed(0)} / 100`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {selected.category.id === 'pokemon' ? (
+                  <div style={{marginTop: '1.3rem'}}>
+                    <div style={subheading}>Card Ladder Pokemon index chart</div>
+                    <PokemonChart series={pokemonSeriesSlice} currentValue={pokemonIndexData.summary.currentValue} />
+                    <div style={{display: 'grid', gap: '0.55rem', marginTop: '0.8rem'}}>
+                      <MiniFact label="Series window" value={`${pokemonSeriesSlice[0]?.date ?? 'n/a'} → ${pokemonSeriesSlice.at(-1)?.date ?? 'n/a'}`} />
+                      <MiniFact label="Current value" value={String(Math.round(pokemonIndexData.summary.currentValue))} />
+                      <MiniFact label="10y change" value={`${pokemonTenYearChange.toFixed(2)}%`} />
+                    </div>
+                  </div>
+                ) : null}
 
                 <div style={{marginTop: '1.2rem'}}>
                   <div style={subheading}>Model setup</div>
@@ -135,44 +137,10 @@ export default function AssetAllocatorPage() {
               </div>
             </div>
           </section>
-
-          <section style={footerPanel}>
-            <div style={subheading}>Scoring rules</div>
-            <div style={{display: 'grid', gap: '0.45rem', color: 'var(--ifm-font-color-secondary)', lineHeight: 1.6}}>
-              <div>• 200D and 200W MA are treated as “cheap vs trend” signals</div>
-              <div>• weekly RSI is kept long-term so it does not flicker every day</div>
-              <div>• drawdown from ATH rewards real discounts without chasing total collapse</div>
-              <div>• relative volume checks whether the move has actual participation</div>
-              <div>• 1Y change catches full-cycle stretch without becoming the whole score</div>
-            </div>
-            <div style={{marginTop: '0.9rem', color: 'var(--ifm-font-color-secondary)'}}>
-              This is a starter build. Next step is to swap the seed snapshot for live or scheduled data pulls, then add individual asset pages.
-            </div>
-          </section>
         </div>
       </main>
     </Layout>
   );
-}
-
-function SummaryTile({label, value, note}: {label: string; value: string; note: string}) {
-  return (
-    <div style={summaryTile}>
-      <div style={eyebrow}>{label}</div>
-      <div style={{fontSize: '1.6rem', fontWeight: 800, marginTop: '0.35rem'}}>{value}</div>
-      <div style={{color: 'var(--ifm-font-color-secondary)', marginTop: '0.2rem', lineHeight: 1.5}}>{note}</div>
-    </div>
-  );
-}
-
-function Badge({tone, children}: {tone: 'green' | 'blue' | 'amber'; children: React.ReactNode}) {
-  const stylesByTone: Record<typeof tone, React.CSSProperties> = {
-    green: {background: 'rgba(56, 211, 159, 0.12)', color: '#8ef0c6', borderColor: 'rgba(56, 211, 159, 0.18)'},
-    blue: {background: 'rgba(125, 211, 252, 0.10)', color: '#bdefff', borderColor: 'rgba(125, 211, 252, 0.18)'},
-    amber: {background: 'rgba(255, 209, 102, 0.10)', color: '#ffe08a', borderColor: 'rgba(255, 209, 102, 0.18)'},
-  };
-
-  return <span style={{...pillBase, ...stylesByTone[tone]}}>{children}</span>;
 }
 
 function Pill({tone, children}: {tone: 'green' | 'blue' | 'amber' | 'red' | 'slate'; children: React.ReactNode}) {
@@ -196,26 +164,6 @@ function MiniFact({label, value}: {label: string; value: string}) {
   );
 }
 
-function IndicatorRow({label, value, score, weight, note}: {label: string; value: string; score: number; weight: number; note: string}) {
-  return (
-    <div style={indicatorRow}>
-      <div style={{display: 'flex', justifyContent: 'space-between', gap: '0.75rem', alignItems: 'center'}}>
-        <div>
-          <div style={{fontWeight: 700}}>{label}</div>
-          <div style={{color: 'var(--ifm-font-color-secondary)', fontSize: '0.88rem'}}>{note}</div>
-        </div>
-        <div style={{textAlign: 'right'}}>
-          <div style={{fontWeight: 800, color: scoreColor(score)}}>{value}</div>
-          <div style={{color: 'var(--ifm-font-color-secondary)', fontSize: '0.8rem'}}>{weight}% weight</div>
-        </div>
-      </div>
-      <div style={{marginTop: '0.55rem'}}>
-        <ScoreBar score={score} compact />
-      </div>
-    </div>
-  );
-}
-
 function ScoreBar({score, compact = false}: {score: number; compact?: boolean}) {
   return (
     <div style={{...scoreTrack, height: compact ? 8 : 10}}>
@@ -224,18 +172,80 @@ function ScoreBar({score, compact = false}: {score: number; compact?: boolean}) 
   );
 }
 
+function PokemonChart({series, currentValue}: {series: Array<{date: string; value: number}>; currentValue: number}) {
+  if (!series.length) {
+    return (
+      <div style={{...selectedCard, display: 'grid', placeItems: 'center', minHeight: 220, color: 'var(--ifm-font-color-secondary)'}}>
+        no live series yet
+      </div>
+    );
+  }
+
+  const values = series.map((point) => point.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const pad = 18;
+  const width = 640;
+  const height = 220;
+  const range = Math.max(1, max - min);
+  const points = series
+    .map((point, index) => {
+      const x = pad + (index / Math.max(1, series.length - 1)) * (width - pad * 2);
+      const y = height - pad - ((point.value - min) / range) * (height - pad * 2);
+      return `${x},${y}`;
+    })
+    .join(' ');
+
+  return (
+    <div style={{...selectedCard, padding: '0.8rem'}}>
+      <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="220" role="img" aria-label="Card Ladder Pokemon index chart, last 10 years">
+        <defs>
+          <linearGradient id="pokemonLineGradient" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%" stopColor="#ffd166" />
+            <stop offset="100%" stopColor="#8ef0c6" />
+          </linearGradient>
+          <linearGradient id="pokemonAreaGradient" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="rgba(255, 209, 102, 0.28)" />
+            <stop offset="100%" stopColor="rgba(255, 209, 102, 0.02)" />
+          </linearGradient>
+        </defs>
+        {[0.25, 0.5, 0.75].map((ratio) => {
+          const y = pad + ratio * (height - pad * 2);
+          return <line key={ratio} x1={pad} x2={width - pad} y1={y} y2={y} stroke="rgba(255,255,255,0.08)" strokeDasharray="4 4" />;
+        })}
+        <path d={`M ${points} L ${width - pad},${height - pad} L ${pad},${height - pad} Z`} fill="url(#pokemonAreaGradient)" opacity="0.6" />
+        <polyline points={points} fill="none" stroke="url(#pokemonLineGradient)" strokeWidth="4" strokeLinejoin="round" strokeLinecap="round" />
+        <circle cx={width - pad} cy={height - pad - ((series[series.length - 1].value - min) / range) * (height - pad * 2)} r="5" fill="#8ef0c6" />
+        <text x={pad} y={18} fill="rgba(238,242,255,0.72)" fontSize="12">low {Math.round(min)}</text>
+        <text x={pad} y={height - 6} fill="rgba(238,242,255,0.62)" fontSize="12">{series[0].date}</text>
+        <text x={width - pad} y={height - 6} textAnchor="end" fill="#eef2ff" fontSize="16" fontWeight="700">current {Math.round(currentValue)}</text>
+      </svg>
+    </div>
+  );
+}
+
+function parseCardLadderDate(date: string) {
+  const [month, day, year] = date.split('/').map(Number);
+  return Date.UTC(year, month - 1, day);
+}
+
+function sliceLastYears(series: Array<{date: string; value: number}>, years: number) {
+  if (!series.length) return [];
+  const latest = parseCardLadderDate(series[series.length - 1].date);
+  const cutoff = new Date(latest);
+  cutoff.setUTCFullYear(cutoff.getUTCFullYear() - years);
+  const cutoffTs = cutoff.getTime();
+  return series.filter((row) => parseCardLadderDate(row.date) >= cutoffTs);
+}
+
 function scoreGradient(score: number) {
-  if (score >= 85) return 'linear-gradient(90deg, #38d39f, #96f2c9)';
-  if (score >= 70) return 'linear-gradient(90deg, #ffd166, #ffe59a)';
-  if (score >= 55) return 'linear-gradient(90deg, #7dd3fc, #bdefff)';
-  return 'linear-gradient(90deg, #ff7b7b, #ffb7b7)';
+  const hue = Math.max(0, Math.min(120, Math.round(score * 1.2)));
+  return `linear-gradient(90deg, hsl(${hue} 85% 55%), hsl(${Math.min(120, hue + 14)} 90% 68%))`;
 }
 
 function scoreColor(score: number) {
-  if (score >= 85) return '#8ef0c6';
-  if (score >= 70) return '#ffe08a';
-  if (score >= 55) return '#bdefff';
-  return '#ffb7b7';
+  const hue = Math.max(0, Math.min(120, Math.round(score * 1.2)));
+  return `hsl(${hue} 90% 66%)`;
 }
 
 const eyebrow: React.CSSProperties = {
@@ -263,23 +273,10 @@ const pillBase: React.CSSProperties = {
   whiteSpace: 'nowrap',
 };
 
-const summaryGrid: React.CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
-  gap: '1rem',
-};
-
-const summaryTile: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.03)',
-  border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: 18,
-  padding: '1rem',
-  boxShadow: '0 12px 40px rgba(0,0,0,0.18)',
-};
-
-const categoryButton: React.CSSProperties = {
-  textAlign: 'left',
+const laneCard: React.CSSProperties = {
   width: '100%',
+  minHeight: 220,
+  textAlign: 'left',
   background: 'rgba(255,255,255,0.03)',
   border: '1px solid rgba(255,255,255,0.08)',
   borderRadius: 20,
@@ -288,52 +285,38 @@ const categoryButton: React.CSSProperties = {
   color: 'inherit',
   boxShadow: '0 12px 40px rgba(0,0,0,0.18)',
   transition: 'transform 120ms ease, border-color 120ms ease, background 120ms ease',
+  touchAction: 'manipulation',
+  WebkitTapHighlightColor: 'transparent',
+  userSelect: 'none',
 };
 
-const categoryButtonActive: React.CSSProperties = {
+const laneCardActive: React.CSSProperties = {
   borderColor: 'rgba(255, 209, 102, 0.35)',
   background: 'rgba(255, 209, 102, 0.06)',
   transform: 'translateY(-1px)',
 };
 
-const categoryIcon: React.CSSProperties = {
-  width: 54,
-  height: 54,
-  borderRadius: 16,
+const laneCardTop: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  gap: '0.8rem',
+  alignItems: 'start',
+};
+
+const laneBadge: React.CSSProperties = {
+  width: 58,
+  height: 58,
+  borderRadius: 18,
   display: 'grid',
   placeItems: 'center',
-  fontSize: '1.4rem',
+  fontSize: '1.5rem',
   fontWeight: 800,
   background: 'linear-gradient(135deg, rgba(255,209,102,0.18), rgba(255,255,255,0.03))',
   border: '1px solid rgba(255,255,255,0.08)',
   flexShrink: 0,
 };
 
-const detailShell: React.CSSProperties = {
-  marginTop: '1.5rem',
-  background: 'rgba(255,255,255,0.03)',
-  border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: 22,
-  padding: '1rem',
-  boxShadow: '0 12px 40px rgba(0,0,0,0.18)',
-};
-
-const detailHeaderRow: React.CSSProperties = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  gap: '1rem',
-  alignItems: 'center',
-  flexWrap: 'wrap',
-};
-
-const detailGrid: React.CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-  gap: '1rem',
-  marginTop: '1rem',
-};
-
-const detailCard: React.CSSProperties = {
+const selectedCard: React.CSSProperties = {
   background: 'rgba(255,255,255,0.025)',
   border: '1px solid rgba(255,255,255,0.08)',
   borderRadius: 18,
@@ -359,10 +342,3 @@ const scoreFill: React.CSSProperties = {
   borderRadius: 999,
 };
 
-const footerPanel: React.CSSProperties = {
-  marginTop: '1.5rem',
-  background: 'rgba(255,255,255,0.03)',
-  border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: 22,
-  padding: '1rem',
-};

@@ -1,0 +1,41 @@
+.pageFrame {
+  width: min(1120px, calc(100% - 2rem));
+  margin: 0 auto;
+}
+
+.laneGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.selectedShell {
+  margin-top: 1.4rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 22px;
+  padding: 1rem;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+}
+
+.selectedHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.selectedGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 900px) {
+  .laneGrid,
+  .selectedGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
